@@ -1,0 +1,16 @@
+{
+    order filter after encode
+    order webdav last
+}
+
+(LOG) {
+    log {
+        output file /var/log/caddy/{args.0}/access.log {
+            roll_size 1
+            roll_keep 10
+            roll_uncompressed
+        }
+    }
+}
+
+import *.conf
