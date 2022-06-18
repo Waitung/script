@@ -109,7 +109,7 @@ update_caddy(){
     if  [ -n "${s_version}" ] ;then echo "因为插件原因，caddy不支持安装指定版本号。"; exit 0; fi
     rm -f /usr/local/bin/caddy.old
     mv /usr/local/bin/caddy /usr/local/bin/caddy.old
-    wget -O /usr/local/bin/caddy 'https://caddyserver.com/api/download?os=linux&arch=amd64&p=github.com%2Fmholt%2Fcaddy-webdav&p=github.com%2Fsjtug%2Fcaddy2-filter&p=github.com%2Fcaddy-dns%2Falidns'
+    wget -O /usr/local/bin/caddy 'https://caddyserver.com/api/download?os=linux&arch=amd64&p=github.com%2Fmholt%2Fcaddy-webdav&p=github.com%2Fcaddyserver%2Freplace-response&p=github.com%2Fcaddy-dns%2Falidns&p=github.com%2Fimgk%2Fcaddy-trojan'
     chown root:root /usr/local/bin/caddy
     chmod 755 /usr/local/bin/caddy
     systemctl restart caddy

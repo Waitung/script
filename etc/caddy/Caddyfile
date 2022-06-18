@@ -1,5 +1,5 @@
 {
-    order filter after encode
+    order replace after encode
     order webdav last
 }
 

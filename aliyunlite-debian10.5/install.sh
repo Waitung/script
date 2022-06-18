@@ -133,7 +133,7 @@ install(){
 }
 
 install_caddy(){
-    wget -q -O /usr/local/bin/caddy 'https://caddyserver.com/api/download?os=linux&arch=amd64&p=github.com%2Fmholt%2Fcaddy-webdav&p=github.com%2Fsjtug%2Fcaddy2-filter&p=github.com%2Fcaddy-dns%2Falidns'
+    wget -q -O /usr/local/bin/caddy 'https://caddyserver.com/api/download?os=linux&arch=amd64&p=github.com%2Fmholt%2Fcaddy-webdav&p=github.com%2Fcaddyserver%2Freplace-response&p=github.com%2Fcaddy-dns%2Falidns'
     chown root:root /usr/local/bin/caddy
     chmod 755 /usr/local/bin/caddy
     mkdir /etc/caddy
