@@ -23,7 +23,7 @@ input_value(){
     ==========  ==========  ==========  ==========  ==========
     阿里云轻量 Debian 10.5 自用脚本
     ----------
-    选择要安装的工具，选项以空格分开，例:1 2 3 4 5 6 7 8
+    选择要安装的工具，选项以空格分开，例:1 2 3 4 5 6 7 8 9 
       1. Caddy (webserver,必装，脚本里都以此为基础)
       2. FileBrowser (网页文件浏览器)
       3. webdav (caddy插件)
@@ -31,8 +31,9 @@ input_value(){
       5. AriaNG (aria2 web前端)
       6. Syncthing (文件同步工具)
       7. Typecho (博客工具)
-      8. Cloudreve (网盘工具)
-      9. php
+      8. Dokcer
+      9. Cloudreve (网盘工具)
+      10. php
     ----------
     脚本用于新系统下安装，在输入完信息前不会安装任何东西， Ctrl+C 终止。
     ==========  ==========  ==========  ==========  =========="
@@ -49,6 +50,7 @@ confirm_value(){
     ariang=0
     syncthing=0
     typecho=0
+    docker=0
     cloudreve=0
     php=0
     while [ -n "$1" ]; do
@@ -60,8 +62,9 @@ confirm_value(){
             5 ) ariang=1;;
             6 ) syncthing=1;;
             7 ) typecho=1; check_php;;
-            8 ) cloudreve=1;;
-            9 ) php=1;;
+            8 ) docker=1;;
+            9 ) cloudreve=1;;
+            10 ) php=1;;
             * ) echo -e "\n\033[31m$1 不是有效选项，重新选择\033[0m"; input_value; break;;
         esac
         shift
@@ -77,6 +80,7 @@ echo_install(){
     if [ ${ariang} -eq 1 ]; then echo "AriaNG"; fi
     if [ ${syncthing} -eq 1 ]; then echo "Syncthing"; fi
     if [ ${typecho} -eq 1 ]; then echo "Typecho"; fi
+    if [ ${docker} -eq 1 ]; then echo "Typecho"; fi
     if [ ${cloudreve} -eq 1 ]; then echo "Cloudreve"; fi
     if [ ${php} -eq 1 ]; then echo "php-fpm 7.3"; fi
     echo "---------------"
@@ -118,6 +122,7 @@ confirm_install(){
 
 install(){
     apt-get update
+    apt-get upgrade -y
     if [ ${caddy} -eq 1 ]; then install_caddy; fi
     if [ ${filebrowser} -eq 1 ]; then install_filebrowser; fi
     if [ ${webdav} -eq 1 ]; then install_webdav; fi
@@ -126,6 +131,7 @@ install(){
     if [ ${syncthing} -eq 1 ]; then install_syncthing; fi
     if [ ${php} -eq 1 ]; then install_php; fi
     if [ ${typecho} -eq 1 ]; then install_typecho; fi
+    if [ ${docker} -eq 1 ]; then install_docker; fi
     if [ ${cloudreve} -eq 1 ]; then install_cloudreve; fi
     sed -i "s/domain_name/${domain_name}/g" /etc/caddy/*.conf   
     check_firewall
@@ -189,7 +195,7 @@ install_aria2(){
     bt_tracker=$(echo `curl -s https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt` | sed "s/[ ]/,/g")
     sed -i "s#bt-tracker=.*#bt-tracker=${bt_tracker}#g" /etc/aria2/aria2.conf
     echo "# 自定义的tracker，必须一行一条的格式书写，更新tracker的脚本会把这些附加到网上获取的tracker后面" > /etc/aria2/tracker.txt
-    curl -Ls ${url_repo}/update-tracker.sh -o ~/sh/update-tracker.sh
+    curl -Ls ${url_repo}/aliyunlite-debian10.5/update-tracker.sh -o ~/sh/update-tracker.sh
     chmod 755 ~/sh/update-tracker.sh
     echo "0 5 * * * ~/sh/update-tracker.sh" >> /var/spool/cron/root
     curl -Ls ${url_repo}/etc/caddy/aria2.conf -o /etc/caddy/aria2.conf
@@ -231,15 +237,24 @@ php_user_root(){
 
 install_typecho(){
     apt-get install php-sqlite3 php-curl php-mbstring php-xml -y
-    wget -q https://github.com/typecho/typecho/archive/master.zip
+    wget -q https://github.com/typecho/typecho/releases/latest/download/typecho.zip
     install_unzip
-    unzip master.zip -d /www
-    rm -f master.zip
-    mv /www/typecho-master /www/blog
+    unzip typecho.zip -d /www/blog
+    rm -f typecho.zip
     curl -Ls ${url_repo}/etc/caddy/blog.conf -o /etc/caddy/blog.conf
     sed -i "s#unix//run/php-fpm/www.sock#unix//run/php/php7.3-fpm.sock#g" /etc/caddy/blog.conf
     time=$(date +%Y/%m/%d-%T)
     echo "${time}：Typecho 安装完毕" >> ~/sh/install.log
+}
+
+install_docker() {
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg -y
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get update
+    apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin -y
+    time=$(date +%Y/%m/%d-%T)
+    echo "${time}：Docker 安装完毕" >> ~/sh/install.log
 }
 
 install_syncthing(){
@@ -345,6 +360,9 @@ RPC地址为：http(ws)://${ip}:6800/jsonrpc
 自行设置
 ---------- ---------- ----------"
 
+    info_docker="Docker 已经安装
+---------- ---------- ----------"
+
     info_cloudreve="Cloudreve 已经安装
 网址：https://yun.${domain_name}
 初始管理员账号：admin@cloudreve.org
@@ -367,6 +385,7 @@ ${cloudreve_password}
     if [ ${syncthing} -eq 1 ]; then echo "${info_syncthing}"; fi
     if [ ${php} -eq 1 ]; then echo "${info_php}"; fi
     if [ ${typecho} -eq 1 ]; then echo "${info_typecho}"; fi
+    if [ ${typecho} -eq 1 ]; then echo "${info_docker}"; fi
     if [ ${cloudreve} -eq 1 ]; then echo "${info_cloudreve}"; fi
 }
 
